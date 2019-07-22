@@ -1,5 +1,4 @@
 from flask import Flask
-from flask_restplus import Api
 from api.config import Config
 
 from api.starships import blueprint as starships
