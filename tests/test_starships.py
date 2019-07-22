@@ -1,8 +1,5 @@
-import requests
-
-from werkzeug.exceptions import NotFound, ServiceUnavailable
+from werkzeug.exceptions import NotFound
 from unittest.mock import patch
-from unittest import mock
 
 from mock_data import (mock_starships_page_1,
                        mock_starships_page_2,
@@ -44,6 +41,18 @@ def test_list_starships(client):
         assert resp.json["starships_unknown_hyperdrive"][0]["name"] == "EF76 Nebulon-B escort frigate"
 
 
+def test_list_starships_sorted_by_hyperdrive(client):
+    """Should return a list of starships sorted by hyperdrive."""
+
+    with patch("requests.get", return_value=MockResponse(mock_starships_page_1)):
+        resp = client.get("/api/starships/")
+
+        assert resp.status_code == 200
+        assert len(resp.json["starships"]) == 2
+        assert resp.json["starships"][0] == "1.0"
+        assert resp.json["starships"][1] == "2.0"
+
+
 def test_empty_starships(client):
     """Should return a empty list of starships."""
 
@@ -65,7 +74,7 @@ def test_empty_starships_unknown_hyperdrive(client):
         assert len(resp.json["starships_unknown_hyperdrive"]) == 0
         assert len(resp.json["starships"]) == 2
 
-    
+
 def test_list_starships_with_next_page(client):
     """Should exist next page."""
 
