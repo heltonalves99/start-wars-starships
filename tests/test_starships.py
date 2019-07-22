@@ -49,8 +49,8 @@ def test_list_starships_sorted_by_hyperdrive(client):
 
         assert resp.status_code == 200
         assert len(resp.json["starships"]) == 2
-        assert resp.json["starships"][0] == "1.0"
-        assert resp.json["starships"][1] == "2.0"
+        assert resp.json["starships"][0]["hyperdrive"] == "1.0"
+        assert resp.json["starships"][1]["hyperdrive"] == "2.0"
 
 
 def test_empty_starships(client):
