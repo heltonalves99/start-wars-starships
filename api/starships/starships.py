@@ -1,5 +1,6 @@
 import requests
 
+from flask import request, url_for
 from flask_restplus import Namespace, Resource
 
 SWAPI_URL = "https://swapi.co/api/"
@@ -17,31 +18,42 @@ class StarshipList(Resource):
         '''List all starships sorted by hyperdrive rating.'''
 
         try:
-            return self.get_starships()
-        except requests.exceptions.RequestException as error:
-            return {}
+            page = int(request.args.get('page', 1))
+            return self.get_starships(page)
+        except requests.exceptions.HTTPError as error:
+            if error.response.status_code == 404:
+                return {
+                    "error": "Page not found"
+                }, 404
+            return {
+                "error": "External resource temporally unvailable."
+            }, 503
 
-    def get_starships(self):
-        url = f"{SWAPI_URL}starships/"
+    def get_starships(self, page=1):
+        url = f"{SWAPI_URL}starships/?page={page}"
 
         data = {
             "starships": [],
             "starships_unknown_hyperdrive": [],
+            "next": None,
+            "prev": None,
         }
 
-        while True:
-            resp = requests.get(url)
-            obj_list = resp.json()
-            starships, starships_unknown_hyperdrive = self.parse_data(obj_list["results"])
-            data["starships"] += starships
-            data["starships_unknown_hyperdrive"] += starships_unknown_hyperdrive
+        resp = requests.get(url)
+        resp.raise_for_status()
 
-            if not obj_list["next"]:
-                break
-
-            url = obj_list["next"]
+        obj_list = resp.json()
+        starships, starships_unknown_hyperdrive = self.parse_data(obj_list["results"])
+        data["starships"] = starships
+        data["starships_unknown_hyperdrive"] = starships_unknown_hyperdrive
 
         data["starships"].sort(key=lambda key: key["hyperdrive"])
+
+        if obj_list["next"]:
+            data["next"] = self.get_url_page(page + 1)
+
+        if obj_list["previous"]:
+            data["prev"] = self.get_url_page(page - 1)
         return data
 
     def parse_data(self, obj_list):
@@ -62,3 +74,6 @@ class StarshipList(Resource):
                 )
 
         return starships, starships_unknown_hyperdrive
+
+    def get_url_page(self, page):
+        return f"{self.api.base_url}starships/?page={page}"

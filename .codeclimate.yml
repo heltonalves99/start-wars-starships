@@ -29,4 +29,5 @@ exclude_patterns:
   - "manage.py"
   - "cardinals/*"
   - "*/migrations/*"
+  - "tests/mock_data.py"
   
